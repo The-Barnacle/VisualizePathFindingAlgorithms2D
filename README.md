@@ -1,4 +1,4 @@
-# UnityPathfindingAlgos
+# VisualizePathFindingAlgorithms2D
 
 Very simple pathfinding visualizer in unity.
 
