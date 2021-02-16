@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8512623876457106073}
   - component: {fileID: -4281757284759124187}
   - component: {fileID: -7132936277270156725}
+  - component: {fileID: -7439986646991527761}
   m_Layer: 0
   m_Name: Square
   m_TagString: Untagged
@@ -126,3 +127,21 @@ MonoBehaviour:
   flagSprite: {fileID: 21300000, guid: e77fca8f8cdbe114a951a73bf45db03b, type: 3}
   baseBlockSprite: {fileID: 7482667652216324306, guid: 39a05513f888f754db350564a30bc971, type: 3}
   isObstacle: 0
+  x: 0
+  y: 0
+--- !u!58 &-7439986646991527761
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8072337149874710733}
+  m_Enabled: 0
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  serializedVersion: 2
+  m_Radius: 0.5

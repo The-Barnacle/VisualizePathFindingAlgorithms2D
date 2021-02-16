@@ -1089,8 +1089,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blockPrefab: {fileID: 8072337149874710733, guid: e0eb85f8b45f4a0469ef73c3c474e505, type: 3}
-  width: 8.5
-  height: 4.5
   isSetStart: 0
   isSetGoal: 0
   startX: 0
@@ -1991,7 +1989,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1103306906}
         m_TargetAssemblyTypeName: SceneController, Assembly-CSharp
-        m_MethodName: AStarAlgorithm
+        m_MethodName: CallSelectedAlgorithm
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

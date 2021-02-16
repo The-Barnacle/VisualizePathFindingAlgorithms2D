@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class DropDownController : MonoBehaviour
 {
 
-    List<string> algorithms = new List<string> { "A*" };
+    List<string> algorithms = new List<string> { "A*", "Greedy Best-First", "Depth-First (Jank)" , "Breadth-First"};
     Dropdown algorithmSelection;
     // Start is called before the first frame update
 

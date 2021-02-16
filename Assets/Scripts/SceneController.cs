@@ -1,16 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class SceneController : MonoBehaviour
 {
     public GameObject blockPrefab;
-    public Block prevGoal;
-    public Block prevStart;
-    public float width = 8.5f;
-    public float height = 4.5f;
+    public Sprite circleSprite;
+    public Block goalPos;
+    public Block startPos;
+    private float width = 8.5f, height = 4.5f;
     public bool isSetStart = false;
     public bool isSetGoal = false;
     Dropdown selectedAlgorithm;
@@ -65,8 +66,8 @@ public class SceneController : MonoBehaviour
 
     private void Start()
     {
-        prevGoal = blockArray[blockArray.Count - 1][blockArray[0].Count - 1];
-        prevStart = blockArray[0][0];
+        goalPos = blockArray[blockArray.Count - 1][blockArray[0].Count - 1];
+        startPos = blockArray[0][0];
         blockArray[0][0].blockGameObject.GetComponent<SquareController>().SetStart();
         blockArray[blockArray.Count - 1][blockArray[0].Count - 1].blockGameObject.GetComponent<SquareController>().SetGoal();
     }
@@ -74,6 +75,7 @@ public class SceneController : MonoBehaviour
 
     public void ResetBoard()
     {
+        StopAllCoroutines();
         foreach (List<Block> g in blockArray)
         {
             foreach (Block b in g)
@@ -85,29 +87,29 @@ public class SceneController : MonoBehaviour
     }
     public void SetPrevGoal(int x, int y)
     {
-        prevGoal = blockArray[x][y];
+        goalPos = blockArray[x][y];
         goalX = x;
         goalY = y;
     }
     public void SetPrevStart(int x, int y)
     {
-        prevStart = blockArray[x][y];
+        startPos = blockArray[x][y];
         startX = x;
         startY = y;
         
     }
     public void SetGoalFlag()
     {
-        if (prevGoal != null)
-            prevGoal.blockGameObject.GetComponent<SquareController>().ResetBlock();
+        if (goalPos != null)
+            goalPos.blockGameObject.GetComponent<SquareController>().ResetBlock();
         isSetStart = false;
         isSetGoal = true;
         isDrawing = false;
     }
     public void SetStartFlag()
     {
-        if (prevStart != null)
-            prevStart.blockGameObject.GetComponent<SquareController>().ResetBlock();
+        if (startPos != null)
+            startPos.blockGameObject.GetComponent<SquareController>().ResetBlock();
         isSetGoal = false;
         isSetStart = true;
         isDrawing = false;
@@ -115,11 +117,34 @@ public class SceneController : MonoBehaviour
 
     #region PathFinding Algorithm General
 
+    public void CallSelectedAlgorithm()
+    {
+        Dropdown dropDownBox = FindObjectOfType<Dropdown>();
+        switch(dropDownBox.value) //0 - A*, 1 - Greedy Best-First. Based on position added
+        {
+            case 0:
+                AStarAlgorithm();
+                break;
+            case 1:
+                GreedyBestFirst();
+                break;
+            case 2:
+                DepthFirst();
+                break;
+            case 3:
+                BreadthFirst();
+                break;
+            default:
+                Debug.Log("Check dropdown box, chosen value outside range.");
+                break;
+        }
+    }
+
 
     /// <summary>
     /// Assign each block an heuristic value based on goal location
     /// </summary>
-    public void CalculateHeuristics()
+    private void CalculateHeuristics()
     {
         foreach(List<Block> l in blockArray)
         {
@@ -130,115 +155,249 @@ public class SceneController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Get a list of adjacent members.
-    /// </summary>
     private List<Block> GetNeighbours(Block parent)
     {
         List<Block> returnList = new List<Block>();
         int x = parent.x, y = parent.y;
         if (x < blockArray.Count - 1)
         {
-            if(!blockArray[x + 1][y].blockGameObject.GetComponent<SquareController>().isObstacle)
+            if (!blockArray[x + 1][y].blockGameObject.GetComponent<SquareController>().isObstacle)
             {
-                if (!blockArray[x + 1][y].searched)
-                {
-                    blockArray[x + 1][y].parent = parent;
                     returnList.Add(blockArray[x + 1][y]);
-                }
             }
         }
         if (x >= 1)
         {
             if (!blockArray[x - 1][y].blockGameObject.GetComponent<SquareController>().isObstacle)
             {
-                if (!blockArray[x - 1][y].searched)
-                {
-                    blockArray[x - 1][y].parent = parent;
                     returnList.Add(blockArray[x - 1][y]);
-                }
             }
 
         }
         if (y >= 1)
         {
-            if (!blockArray[x][y-1].blockGameObject.GetComponent<SquareController>().isObstacle)
+            if (!blockArray[x][y - 1].blockGameObject.GetComponent<SquareController>().isObstacle)
             {
-                if (!blockArray[x][y - 1].searched)
-                {
-                    blockArray[x][y - 1].parent = parent;
                     returnList.Add(blockArray[x][y - 1]);
-                }
             }
         }
         if (y < blockArray[0].Count - 1)
         {
-            if (!blockArray[x ][y+1].blockGameObject.GetComponent<SquareController>().isObstacle)
+            if (!blockArray[x][y + 1].blockGameObject.GetComponent<SquareController>().isObstacle)
             {
-                if(!blockArray[x][y+1].searched)
-                {
-                    blockArray[x][y + 1].parent = parent;
                     returnList.Add(blockArray[x][y + 1]);
-                }
-
             }
         }
         return returnList;
     }
-
-    IEnumerator AnimateSearch(List<Block> bl)
+    IEnumerator AnimateSearch(List<Block> bl, Color color)
     {
-        Debug.Log("Animate Called");
         for(int i = 0; i<bl.Count; i++ )
         {
-            bl[i].blockGameObject.GetComponent<SpriteRenderer>().color = Color.red;
-            Debug.Log("Done one");
+            bl[i].blockGameObject.GetComponent<SpriteRenderer>().color = color;
             yield return new WaitForSeconds(0.025f);
         }
     }
+
     #endregion
 
     #region A* 
+    private void AStarAlgorithm()
+    {
+        CalculateHeuristics();
+        List<Block> openList = new List<Block>();
+        List<Block> closedList = new List<Block>();
+        Block current = null;
+        int g = 0;
+        // Add start position to list
+        openList.Add(startPos);
+        
+        while (openList.Count >0)
+        {
+            //Get the square with the lowest F score.
+            var lowest = openList.Min(l => l.f);
+            current = openList.First(l => l.f == lowest);
 
-    public void AStarAlgorithm()
+            //Add the lowest F value to the list
+            closedList.Add(current);
+            //Remove from the open list.
+            openList.Remove(current);
+
+            //Check whether the goal has been reached i.e. added to the closed list
+            if (closedList.FirstOrDefault(l => l.x == goalPos.x && l.y == goalPos.y) != null)
+                break;
+
+            var neighbours = GetNeighbours(current);
+            g = current.g + 1;
+
+            foreach(var neighbour in neighbours)
+            {
+                //If it exists in the closed list
+                if (closedList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) != null)
+                    continue;
+
+                //If not in the open list
+                if(openList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) == null)
+                {
+                    neighbour.g = g;
+                    neighbour.parent = current;
+                    openList.Insert(0,neighbour);
+                }
+                else
+                {
+                    //Check if the current G score is lower than the stored G score.
+                    {
+                        if(g + neighbour.h < neighbour.f)
+                        {
+                            neighbour.g = g;
+                            neighbour.parent = current;
+                        }
+                    }
+                }
+            }
+        }
+        StartCoroutine(AnimateSearch(closedList, Color.red));
+
+        List<Block> circleList = new List<Block>();
+        foreach (List<Block> l in blockArray)
+            foreach (Block b in l)
+            {
+                //Check if it's not in the closed list
+                if (closedList.FirstOrDefault(l => l.x == b.x && l.y == b.y) == null)
+                {
+                    b.blockGameObject.GetComponent<SpriteRenderer>().sprite = circleSprite;
+                    b.blockGameObject.GetComponent<CircleCollider2D>().enabled = true;
+                    b.blockGameObject.GetComponent<BoxCollider2D>().enabled = false;
+                }
+            }
+    }
+    #endregion
+
+    #region Greedy Best-First
+    private void GreedyBestFirst()
     {
         CalculateHeuristics();
         //Create frontier list
-        List<Block> frontier = new List<Block>();
-        //Reset the state of the array
-        foreach (List<Block> l in blockArray)
-            foreach (Block b in l)
-                b.searched = false;
-        foreach (Block b in GetNeighbours(blockArray[startX][startY]))
+        List<Block> openList = new List<Block>();
+        List<Block> closedList = new List<Block>();
+        Block current = null;
+        //Add starting pos to open list
+        openList.Add(startPos);
+
+        while(openList.Count > 0)
         {
-            b.g = 1;
-            b.searched = true;
-            b.CalculateF();
-            frontier.Add(b);
-        }
-        List<Block> animatedList = new List<Block>();
-        //SOMETHING BIG BROKE HERE, UNITY HANGS
-        while (!prevGoal.searched)
-        {
-            frontier.Sort();
-            Block expanded = frontier[0];
-            Debug.Log("Expanded X:" + expanded.x + "  Y:" + expanded.y + " g:" + expanded.g);
-            animatedList.Add(expanded);
-            frontier.RemoveAt(0);
-            foreach (Block b in GetNeighbours(expanded))
+            //Get the square with the lowest H score.
+            var lowest = openList.Min(l => l.h);
+            current = openList.First(l => l.h == lowest);
+
+            //Add the lowest h value to the list
+            closedList.Add(current);
+            //Remove from the open list.
+            openList.Remove(current);
+
+            //Check whether the goal has been reached i.e. added to the closed list
+            if (closedList.FirstOrDefault(l => l.x == goalPos.x && l.y == goalPos.y) != null)
+                break;
+
+            var neighbours = GetNeighbours(current);
+            foreach(var neighbour in neighbours)
             {
+                //If it exists in the closed list
+                if (closedList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) != null)
+                    continue;
 
-                b.g = b.parent.g + 1;
-                b.searched = true;
-                b.CalculateF();
-
-                frontier.Add(b);
+                //If not in the open list
+                if (openList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) == null)
+                {
+                    neighbour.parent = current;
+                    openList.Insert(0, neighbour);
+                }
             }
         }
-        StartCoroutine(AnimateSearch(animatedList));
-        Debug.Log(frontier.Count);
+        StartCoroutine(AnimateSearch(closedList, Color.green));
+    }
+    #endregion
+
+    #region Depth-First
+    private void DepthFirst()
+    {
+        List<Block> openList = new List<Block>();
+        List<Block> closedList = new List<Block>();
+        Block current = null;
+
+        //Add starting pos to openList
+        openList.Add(startPos);
+        int breakCheck = 0;
+        while(openList.Count >0)
+        {
+            current = openList[0];
+            openList.Remove(current);
+            closedList.Add(current);
+
+            //Check whether the closedList contains the goal
+            if (closedList.FirstOrDefault(l => l.x == goalPos.x && l.y == goalPos.y) != null)
+                break;
+
+            var neighbours = GetNeighbours(current);
+            foreach(var neighbour in neighbours)
+            {
+                //If it exists in the closed list
+                if (closedList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) != null)
+                    continue;
+                //If not in the open list
+                if (openList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) == null)
+                {
+                    neighbour.parent = current;
+                    openList.Insert(0, neighbour);
+                }
+            }
+            breakCheck++;
+
+        }
+        StartCoroutine(AnimateSearch(closedList, Color.blue));
 
     }
 
     #endregion
+
+    #region Breadth First
+    private void BreadthFirst()
+    {
+        List<Block> openList = new List<Block>();
+        List<Block> closedList = new List<Block>();
+        Block current = null;
+
+        //Add starting pos to openList
+        openList.Add(startPos);
+        int breakCheck = 0;
+        while (openList.Count > 0)
+        {
+            current = openList[openList.Count-1];
+            openList.Remove(current);
+            closedList.Add(current);
+
+            //Check whether the closedList contains the goal
+            if (closedList.FirstOrDefault(l => l.x == goalPos.x && l.y == goalPos.y) != null)
+                break;
+
+            var neighbours = GetNeighbours(current);
+            foreach (var neighbour in neighbours)
+            {
+                //If it exists in the closed list
+                if (closedList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) != null)
+                    continue;
+                //If not in the open list
+                if (openList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) == null)
+                {
+                    neighbour.parent = current;
+                    openList.Insert(0, neighbour);
+                }
+            }
+            breakCheck++;
+
+        }
+        StartCoroutine(AnimateSearch(closedList, Color.yellow));
+    }
+    #endregion
+
 }
