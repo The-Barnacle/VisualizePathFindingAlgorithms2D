@@ -1089,6 +1089,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blockPrefab: {fileID: 8072337149874710733, guid: e0eb85f8b45f4a0469ef73c3c474e505, type: 3}
+  circleSprite: {fileID: -2413806693520163455, guid: 9ade89c40b395ae4795b1ea390d614d2, type: 3}
   isSetStart: 0
   isSetGoal: 0
   startX: 0
@@ -1715,7 +1716,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Start
+  m_Text: Set Start
 --- !u!222 &1509963694
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2387,7 +2388,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Goal
+  m_Text: Set Goal
 --- !u!222 &2033256871
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -14,7 +14,6 @@ public class SceneController : MonoBehaviour
     private float width = 8.5f, height = 4.5f;
     public bool isSetStart = false;
     public bool isSetGoal = false;
-    Dropdown selectedAlgorithm;
 
     List<List<Block>> blockArray;
     public int startX, startY;
@@ -192,11 +191,34 @@ public class SceneController : MonoBehaviour
     }
     IEnumerator AnimateSearch(List<Block> bl, Color color)
     {
-        for(int i = 0; i<bl.Count; i++ )
+        foreach (Block b in bl)
         {
-            bl[i].blockGameObject.GetComponent<SpriteRenderer>().color = color;
+            b.blockGameObject.GetComponent<SpriteRenderer>().color = color;
             yield return new WaitForSeconds(0.025f);
         }
+        StartCoroutine(AnimateOptimalPath());
+    }
+
+    IEnumerator AnimateOptimalPath()
+    {
+        Block temp = new Block();
+        List<Block> optimalPath = new List<Block>();
+        temp = goalPos;
+        while(temp != startPos )
+        {
+            optimalPath.Add(temp);
+            temp = temp.parent;
+
+        }
+        Debug.Log($"Size of Optimal Path: {optimalPath.Count}");
+        for(int i = optimalPath.Count-1; i>=0; i--)
+        {
+            optimalPath[i].blockGameObject.GetComponent<SpriteRenderer>().color = Color.black;
+            yield return new WaitForSeconds(0.025f);
+        }
+
+
+
     }
 
     #endregion
@@ -257,19 +279,6 @@ public class SceneController : MonoBehaviour
             }
         }
         StartCoroutine(AnimateSearch(closedList, Color.red));
-
-        List<Block> circleList = new List<Block>();
-        foreach (List<Block> l in blockArray)
-            foreach (Block b in l)
-            {
-                //Check if it's not in the closed list
-                if (closedList.FirstOrDefault(l => l.x == b.x && l.y == b.y) == null)
-                {
-                    b.blockGameObject.GetComponent<SpriteRenderer>().sprite = circleSprite;
-                    b.blockGameObject.GetComponent<CircleCollider2D>().enabled = true;
-                    b.blockGameObject.GetComponent<BoxCollider2D>().enabled = false;
-                }
-            }
     }
     #endregion
 
@@ -289,6 +298,7 @@ public class SceneController : MonoBehaviour
             //Get the square with the lowest H score.
             var lowest = openList.Min(l => l.h);
             current = openList.First(l => l.h == lowest);
+            //G is used in GreedyBestFirst to find the Optimal path, not the path to search next.
 
             //Add the lowest h value to the list
             closedList.Add(current);
@@ -300,7 +310,7 @@ public class SceneController : MonoBehaviour
                 break;
 
             var neighbours = GetNeighbours(current);
-            foreach(var neighbour in neighbours)
+            foreach (var neighbour in neighbours)
             {
                 //If it exists in the closed list
                 if (closedList.FirstOrDefault(l => l.x == neighbour.x && l.y == neighbour.y) != null)
@@ -312,6 +322,7 @@ public class SceneController : MonoBehaviour
                     neighbour.parent = current;
                     openList.Insert(0, neighbour);
                 }
+
             }
         }
         StartCoroutine(AnimateSearch(closedList, Color.green));
