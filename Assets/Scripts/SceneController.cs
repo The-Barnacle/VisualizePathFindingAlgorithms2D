@@ -216,14 +216,12 @@ public class SceneController : MonoBehaviour
             optimalPath[i].blockGameObject.GetComponent<SpriteRenderer>().color = Color.black;
             yield return new WaitForSeconds(0.025f);
         }
-
-
-
     }
 
     #endregion
 
     #region A* 
+    //https://gigi.nullneuron.net/gigilabs/a-pathfinding-example-in-c/ Leaned heavily on this.
     private void AStarAlgorithm()
     {
         CalculateHeuristics();
@@ -410,5 +408,4 @@ public class SceneController : MonoBehaviour
         StartCoroutine(AnimateSearch(closedList, Color.yellow));
     }
     #endregion
-
 }
