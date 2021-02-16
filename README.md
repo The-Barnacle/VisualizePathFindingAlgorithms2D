@@ -1,6 +1,6 @@
-# UnityPathfindingAlgos
+# VisualizePathFindingAlgorithms2D
 
-Very simple pathfinding visualizer in unity.
+Pathfinding visualizer I made while learning Unity.
 
 WebGL:
-https://play.unity.com/mg/other/visualize-pathfinding-algorithms
+https://play.unity.com/mg/other/pathfinding-algorithms
